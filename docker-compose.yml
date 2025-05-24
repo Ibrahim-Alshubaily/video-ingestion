@@ -24,22 +24,13 @@ services:
       - video-data:/app/frames
 
   spark-job:
-    image: apache/spark:3.5.0
+    build: ./spark-jobs
     container_name: spark-job
-    entrypoint: [
-      "/opt/spark/bin/spark-submit",
-      "--master", "local[*]",
-      "--conf", "spark.driver.extraJavaOptions=-Dlog4j.configuration=file:/opt/app/log4j2.properties",
-      "--conf", "spark.executor.extraJavaOptions=-Dlog4j.configuration=file:/opt/app/log4j.properties",
-      "/opt/app/frame-processor.py"
-    ]
     environment:
       - HOME=/tmp
     volumes:
-      - video-data:/app/frames
-      - ./spark-jobs:/opt/app
-      - ./spark-checkpoints:/opt/app/checkpoints
-
+      - video-data:/app/frames  # everything in one place: input, output, and checkpoints
 
 volumes:
   video-data:
+
