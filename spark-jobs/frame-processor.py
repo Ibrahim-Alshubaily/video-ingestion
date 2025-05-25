@@ -60,7 +60,7 @@ df_stream = spark.readStream \
     .format("binaryFile") \
     .option("recursiveFileLookup", "true") \
     .option("pathGlobFilter", "*.jpg") \
-    .option("maxFilesPerTrigger", 5) \
+    .option("maxFilesPerTrigger", 64) \
     .load(frames_input_path)
 
 # Add annotation column

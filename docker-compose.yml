@@ -19,7 +19,7 @@ services:
     build: ./video-processor
     container_name: video-processor
     depends_on:
-      - video-source
+      - video-relay
     volumes:
       - video-data:/app/frames
 
@@ -29,7 +29,7 @@ services:
     environment:
       - HOME=/tmp
     volumes:
-      - video-data:/app/frames  # everything in one place: input, output, and checkpoints
+      - video-data:/app/frames
 
 volumes:
   video-data:

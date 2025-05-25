@@ -1,10 +1,66 @@
-FROM python:3.10-slim
+######################################################################
+# Stage 1 – build OpenCV and Go service#
+######################################################################
+FROM golang:1.24-bullseye AS build
 
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    && pip install opencv-python-headless
+ARG OPENCV_VERSION=4.11.0
+ENV DEBIAN_FRONTEND=noninteractive \
+   PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
+   CGO_ENABLED=1 \
+   GO111MODULE=on
 
-COPY main.py /app/main.py
+# ---- build dependecies ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+       build-essential cmake git wget unzip pkg-config \
+       libgtk2.0-dev \
+       libavcodec-dev libavformat-dev libswscale-dev \
+   && rm -rf /var/lib/apt/lists/*
 
+# ---- fetch and unpack OpenCV ----
+WORKDIR /opt
+RUN wget -q -O opencv.zip         https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip  && \
+   wget -q -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION}.zip && \
+   unzip -qq opencv.zip && unzip -qq opencv_contrib.zip && \
+   rm  opencv.zip opencv_contrib.zip
+
+# ---- build OpenCV ----
+WORKDIR /opt/opencv-${OPENCV_VERSION}/build
+RUN cmake -D CMAKE_BUILD_TYPE=Release \
+         -D CMAKE_INSTALL_PREFIX=/usr/local \
+         -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib-${OPENCV_VERSION}/modules \
+         -D OPENCV_GENERATE_PKGCONFIG=ON \
+         -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D BUILD_DOCS=OFF \
+         .. && \
+   make -j"$(nproc)" && make install && ldconfig
+
+# ---- pull Go modules ----
 WORKDIR /app
-CMD ["python", "main.py"]
+COPY go.mod go.sum ./
+RUN go mod download
+
+# ---- copy source & build service ----
+COPY . .
+RUN go build -o video-processor .
+
+
+#########################################################
+# Stage 2 – runtime image
+#########################################################
+FROM debian:bullseye-slim
+
+ENV LD_LIBRARY_PATH=/usr/local/lib \
+   PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+# ---- runtime dependecies ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+       libgtk2.0-0 \
+       libavcodec58 libavformat58 libswscale5 \
+       libglib2.0-0 libsm6 libxrender1 libxext6 \
+   && rm -rf /var/lib/apt/lists/*
+
+# copy OpenCV libs & Go binary from builder
+COPY --from=build /usr/local /usr/local
+COPY --from=build /app/video-processor /usr/local/bin/video-processor
+
+WORKDIR /usr/local/bin
+ENTRYPOINT ["./video-processor"]
