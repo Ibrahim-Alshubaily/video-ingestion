@@ -3,5 +3,5 @@ FROM alpine:latest
 RUN apk add --no-cache ffmpeg
 
 CMD ffmpeg -stream_loop -1 -re -i /data/sample.mp4 \
-    -an -c:v libx264 -vf scale=1280:720,fps=15 -b:v 1M -preset ultrafast \
+    -an -c:v libx264 -vf scale=640:640,fps=3 -b:v 1M -preset ultrafast \
      -rtsp_transport tcp -f rtsp rtsp://video-relay:8554/mystream
