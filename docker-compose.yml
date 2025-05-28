@@ -1,44 +1,45 @@
 version: '3.8'
 
 services:
-  video-relay:
+  relay-server:
     image: bluenviron/mediamtx:latest
-    container_name: video-relay
+    container_name: relay-server
     ports:
       - "8554:8554"
 
-  video-source:
+  image-producer:
     build:
       context: .
-      dockerfile: build/docker/Dockerfile.video-source
-    container_name: video-source
+      dockerfile: build/docker/Dockerfile.image-producer
+    container_name: image-producer
     depends_on:
-      - video-relay
-    volumes:
-      - ./data:/data
+      - relay-server
+    environment:
+      - RTSP_URL=rtsp://relay-server:8554/image-stream
 
-  video-processor:
+  image-consumer:
     build:
       context: .
-      dockerfile: build/docker/Dockerfile.video-processor
-    container_name: video-processor
+      dockerfile: build/docker/Dockerfile.image-consumer
+    container_name: image-consumer
     depends_on:
-      - video-relay
+      - relay-server
+    environment:
+      - RTSP_URL=rtsp://relay-server:8554/image-stream
     volumes:
-      - video-data:/app/frames
+      - data:/app/frames
 
-  spark-job:
+  image-annotator:
     build:
       context: .
-      dockerfile: build/docker/Dockerfile.spark-jobs
-    container_name: spark-job
+      dockerfile: build/docker/Dockerfile.image-annotator
+    container_name: image-annotator
     environment:
       - HOME=/tmp
     ports:
       - "4040:4040"
     volumes:
-      - video-data:/app/frames
+      - data:/app/frames
 
 volumes:
-  video-data:
-
+  data:

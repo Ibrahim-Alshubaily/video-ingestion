@@ -1,4 +1,4 @@
-module video-source
+module image-consumer
 
 go 1.24
 

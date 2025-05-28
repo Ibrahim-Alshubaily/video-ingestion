@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"video-source/internal/config"
+	"image-consumer/internal/config"
 
 	"gocv.io/x/gocv"
 )
