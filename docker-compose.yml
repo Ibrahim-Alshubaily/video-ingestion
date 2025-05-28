@@ -27,7 +27,7 @@ services:
     environment:
       - RTSP_URL=rtsp://relay-server:8554/image-stream
     volumes:
-      - data:/app/frames
+      - ./data:/app/frames
 
   image-annotator:
     build:
@@ -39,7 +39,5 @@ services:
     ports:
       - "4040:4040"
     volumes:
-      - data:/app/frames
+      - ./data:/app/frames
 
-volumes:
-  data:
