@@ -35,11 +35,11 @@ RUN cmake -D CMAKE_BUILD_TYPE=Release \
 
 # ---- pull Go modules ----
 WORKDIR /app
-COPY go.mod go.sum ./
+COPY video-processor/go.mod video-processor/go.sum ./
 RUN go mod download
 
 # ---- copy source & build service ----
-COPY . .
+COPY video-processor/ .
 RUN go build -o video-processor .
 
 
